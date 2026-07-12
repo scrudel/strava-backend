@@ -27,7 +27,7 @@ async function doSync() {
   let page = 1;
   let total = 0;
   const perPage = 100;
-  const maxPages = 5; // ~500 ostatnich aktywności, wystarczające do CTL/ATL (42 dni) z zapasem
+  const maxPages = 50; // ~500 ostatnich aktywności, wystarczające do CTL/ATL (42 dni) z zapasem
 
   while (page <= maxPages) {
     const r = await fetch(
