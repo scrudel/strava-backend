@@ -20,35 +20,52 @@ async function getValidAccessToken() {
  * i zapisuje lokalnie. Endpoint TYLKO odczytuje z API Stravy — żadne
  * wywołanie w tym pliku nie modyfikuje ani nie usuwa danych na Stravie.
  */
+async function doSync() {
+  const token = await getValidAccessToken();
+  const athlete = getLatestAthlete();
+
+  let page = 1;
+  let total = 0;
+  const perPage = 100;
+  const maxPages = 5; // ~500 ostatnich aktywności, wystarczające do CTL/ATL (42 dni) z zapasem
+
+  while (page <= maxPages) {
+    const r = await fetch(
+      `https://www.strava.com/api/v3/athlete/activities?per_page=${perPage}&page=${page}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!r.ok) throw new Error(`Strava API error: ${r.status} ${await r.text()}`);
+    const batch = await r.json();
+    if (batch.length === 0) break;
+
+    batch.forEach((a) => upsertActivity(athlete.athlete_id, a));
+    total += batch.length;
+    page++;
+    if (batch.length < perPage) break;
+  }
+
+  return total;
+}
+
 router.post("/sync", async (req, res) => {
   try {
-    const token = await getValidAccessToken();
-    const athlete = getLatestAthlete();
-
-    let page = 1;
-    let total = 0;
-    const perPage = 100;
-    const maxPages = 5; // ~500 ostatnich aktywności, wystarczające do CTL/ATL (42 dni) z zapasem
-
-    while (page <= maxPages) {
-      const r = await fetch(
-        `https://www.strava.com/api/v3/athlete/activities?per_page=${perPage}&page=${page}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!r.ok) throw new Error(`Strava API error: ${r.status} ${await r.text()}`);
-      const batch = await r.json();
-      if (batch.length === 0) break;
-
-      batch.forEach((a) => upsertActivity(athlete.athlete_id, a));
-      total += batch.length;
-      page++;
-      if (batch.length < perPage) break;
-    }
-
+    const total = await doSync();
     res.json({ ok: true, synced: total });
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Wersja GET — działa po prostu po wejściu na adres w przeglądarce,
+// bez potrzeby żadnych dodatkowych narzędzi.
+router.get("/sync", async (req, res) => {
+  try {
+    const total = await doSync();
+    res.send(`Zsynchronizowano ${total} aktywności ze Stravy ✓ (możesz zamknąć tę kartę)`);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Błąd synchronizacji: " + e.message);
   }
 });
 
