@@ -40,7 +40,7 @@ async function doSync() {
 
   while (page <= maxPages) {
     const r = await fetch(
-      `https://www.strava.com/api/v3/athlete/activities?per_page=${perPage}&page=${page}`,
+      `https://www.strava.com/api/v3/athlete/activities?per_page=${perPage}&page=${page}${afterParam}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (!r.ok) throw new Error(`Strava API error: ${r.status} ${await r.text()}`);
