@@ -1,5 +1,5 @@
 import express from "express";
-import { getLatestAthlete, getTokens, upsertActivity, listActivities } from "../db/db.js";
+import { db, getLatestAthlete, getTokens, upsertActivity, listActivities } from "../db/db.js";
 import { refreshAccessToken } from "./auth.js";
 
 const router = express.Router();
@@ -23,6 +23,15 @@ async function getValidAccessToken() {
 async function doSync() {
   const token = await getValidAccessToken();
   const athlete = getLatestAthlete();
+
+  // Synchronizacja przyrostowa: jeśli mamy już jakieś aktywności w bazie,
+  // pobieramy tylko te NOWSZE niż ostatnia zapisana (parametr "after" Stravy).
+  const newest = db
+    .prepare("SELECT start_date FROM activities WHERE athlete_id = ? ORDER BY start_date DESC LIMIT 1")
+    .get(athlete.athlete_id);
+  const afterParam = newest
+    ? `&after=${Math.floor(new Date(newest.start_date).getTime() / 1000)}`
+    : "";
 
   let page = 1;
   let total = 0;
