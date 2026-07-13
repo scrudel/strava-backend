@@ -20,21 +20,7 @@ app.get("/", (req, res) => {
   res.send("Trener Hybrydowy — backend Strava działa.");
 });
 
-// TYMCZASOWY endpoint diagnostyczny — pokazuje TYLKO czy zmienne środowiskowe
-// dotarły do serwera, nigdy ich pełnej wartości. Usuniemy go, gdy wszystko
-// zadziała.
-app.get("/debug/env", (req, res) => {
-  const id = process.env.STRAVA_CLIENT_ID;
-  const secret = process.env.STRAVA_CLIENT_SECRET;
-  const redirect = process.env.STRAVA_REDIRECT_URI;
-  res.json({
-    STRAVA_CLIENT_ID_present: !!id,
-    STRAVA_CLIENT_ID_preview: id ? String(id).slice(0, 3) + "..." : null,
-    STRAVA_CLIENT_SECRET_present: !!secret,
-    STRAVA_REDIRECT_URI_present: !!redirect,
-    STRAVA_REDIRECT_URI_value: redirect || null,
-  });
-});
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serwer działa na porcie ${PORT}`));
